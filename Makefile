@@ -34,10 +34,17 @@ validate_elasticsearch_running:
 validate_gandalf_running:
 	@if [ "`curl -sv http://localhost:8001/ 2>&1 | grep 'Connection refused'`" != "" ]; then echo "\nERROR:\n\nGandalf must be running. Please make sure you can run it before running cow tests.\n" && exit 1; fi
 
+kill-redis-sentinel:
+	-redis-cli -p 7574 shutdown
+
+redis-sentinel: kill-redis-sentinel
+	redis-sentinel ./redis_sentinel.conf; sleep 1
+	redis-cli -p 7574 info > /dev/null
+
 kill_redis:
 	-redis-cli -p 7575 shutdown
 
-redis: kill_redis
+redis: kill_redis redis-sentinel
 	redis-server ./redis.conf; sleep 1
 	redis-cli -p 7575 info > /dev/null
 
